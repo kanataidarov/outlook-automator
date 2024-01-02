@@ -3,14 +3,14 @@ package router
 import (
 	"log/slog"
 	"net/http"
-	"outlook-automator/internal/http-server/handlers/outlook/restclient"
-	"outlook-automator/pkg/config"
+	client "outlook-automator/internal/http-server/handlers/outlook/restclient"
+	"outlook-automator/pkg/server/config"
 
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
 )
 
-func Serve(cfg *config.Config, log *slog.Logger) {
+func Serve(srvCfg *config.ServerConfig, log *slog.Logger) {
 	router := chi.NewRouter()
 
 	router.Use(middleware.RequestID)
@@ -18,21 +18,21 @@ func Serve(cfg *config.Config, log *slog.Logger) {
 	router.Use(middleware.Recoverer)
 	router.Use(middleware.URLFormat)
 
-	router.Post("/folders", restclient.New(cfg, log))
+	router.Post("/folders", client.New(log))
 
-	log.Info("Starting server", slog.String("address", cfg.Address))
+	log.Info("Starting server", slog.String("address", srvCfg.Address))
 	log.Debug("Debug logs enabled")
 
 	srv := &http.Server{
-		Addr:         cfg.HttpServer.Address,
+		Addr:         srvCfg.HttpServer.Address,
 		Handler:      router,
-		ReadTimeout:  cfg.HttpServer.Timeout,
-		WriteTimeout: cfg.HttpServer.Timeout,
-		IdleTimeout:  cfg.HttpServer.IdleTimeout,
+		ReadTimeout:  srvCfg.HttpServer.Timeout,
+		WriteTimeout: srvCfg.HttpServer.Timeout,
+		IdleTimeout:  srvCfg.HttpServer.IdleTimeout,
 	}
 
 	if err := srv.ListenAndServe(); err != nil {
-		log.Error("Failed to start server", slog.String("address", cfg.Address))
+		log.Error("Failed to start server", slog.String("address", srvCfg.HttpServer.Address))
 	}
 
 	log.Error("Server stopped")

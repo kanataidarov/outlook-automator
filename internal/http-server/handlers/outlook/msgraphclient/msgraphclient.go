@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	clientconfig "outlook-automator/internal/clientconfig"
 	response "outlook-automator/pkg/api/response"
-	"outlook-automator/pkg/config"
 	"strconv"
 
 	azidentity "github.com/Azure/azure-sdk-for-go/sdk/azidentity"
@@ -21,20 +21,21 @@ type Response struct {
 	Data string `json:"data,omitempty"`
 }
 
-func New(cfg *config.Config, log *slog.Logger) http.HandlerFunc {
+func New(log *slog.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		const op = "http-server.handlers.outlook.client.New"
+		clCfg := clientconfig.Load()
 
 		log = log.With(
 			slog.String("op", op),
 			slog.String("request_id", middleware.GetReqID(r.Context())),
 		)
 
-		folders(w, r, cfg, log)
+		folders(w, r, clCfg, log)
 	}
 }
 
-func folders(w http.ResponseWriter, r *http.Request, cfg *config.Config, log *slog.Logger) {
+func folders(w http.ResponseWriter, r *http.Request, cfg *clientconfig.ClientConfig, log *slog.Logger) {
 	// appGraphId := cfg.OutlookClient.AppGraphId
 	clientId := cfg.OutlookClient.ClientId
 	tenantId := cfg.OutlookClient.TenantId

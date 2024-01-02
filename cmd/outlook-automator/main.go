@@ -4,14 +4,14 @@ import (
 	"log/slog"
 	"os"
 	"outlook-automator/internal/http-server/router"
-	"outlook-automator/pkg/config"
+	"outlook-automator/pkg/server/config"
 )
 
 func main() {
-	cfg := config.Load()
-	log := setLogger(cfg.LogLevel)
+	srvCfg := config.Load()
+	log := setLogger(srvCfg.LogLevel)
 
-	router.Serve(cfg, log)
+	router.Serve(srvCfg, log)
 }
 
 func setLogger(logLevel string) *slog.Logger {
