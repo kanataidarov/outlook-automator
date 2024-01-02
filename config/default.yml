@@ -1,0 +1,11 @@
+http_server:
+  address: "localhost:8091"
+  timeout: 4s
+  idle_timeout: 30s
+outlook_client:
+  app_graph_id:   # unused in current project. used in msgraph explorer
+  client_id:
+  tenant_id:
+  uname:
+  paswd:
+log_level: debug

@@ -15,15 +15,15 @@ func main() {
 }
 
 func setLogger(logLevel string) *slog.Logger {
-	var log *slog.Logger
+	var logger *slog.Logger
 
 	switch logLevel {
 	case "debug":
-		log = slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}))
+		logger = slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}))
 	case "info":
-		log = slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo}))
+		logger = slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo}))
 
 	}
 
-	return log
+	return logger
 }

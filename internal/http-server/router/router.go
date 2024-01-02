@@ -3,7 +3,7 @@ package router
 import (
 	"log/slog"
 	"net/http"
-	"outlook-automator/internal/http-server/handlers/outlook/client"
+	"outlook-automator/internal/http-server/handlers/outlook/restclient"
 	"outlook-automator/pkg/config"
 
 	"github.com/go-chi/chi"
@@ -18,17 +18,17 @@ func Serve(cfg *config.Config, log *slog.Logger) {
 	router.Use(middleware.Recoverer)
 	router.Use(middleware.URLFormat)
 
-	router.Post("/folders", client.New(log))
+	router.Post("/folders", restclient.New(cfg, log))
 
 	log.Info("Starting server", slog.String("address", cfg.Address))
 	log.Debug("Debug logs enabled")
 
 	srv := &http.Server{
-		Addr:         cfg.Address,
+		Addr:         cfg.HttpServer.Address,
 		Handler:      router,
 		ReadTimeout:  cfg.HttpServer.Timeout,
 		WriteTimeout: cfg.HttpServer.Timeout,
-		IdleTimeout:  cfg.IdleTimeout,
+		IdleTimeout:  cfg.HttpServer.IdleTimeout,
 	}
 
 	if err := srv.ListenAndServe(); err != nil {
