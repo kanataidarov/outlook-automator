@@ -1,19 +1,16 @@
 package restclient
 
 import (
-	"context"
+	"encoding/json"
 	"fmt"
+	"io"
 	"log/slog"
 	"net/http"
 	clientconfig "outlook-automator/internal/clientconfig"
 	response "outlook-automator/pkg/api/response"
-	"strconv"
 
-	azidentity "github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/render"
-	msgraph "github.com/microsoftgraph/msgraph-sdk-go"
-	msgusers "github.com/microsoftgraph/msgraph-sdk-go/users"
 )
 
 type Response struct {
@@ -36,49 +33,37 @@ func New(log *slog.Logger) http.HandlerFunc {
 }
 
 func folders(w http.ResponseWriter, r *http.Request, clCfg *clientconfig.ClientConfig, log *slog.Logger) {
-	// appGraphId := clCfg.OutlookClient.AppGraphId
-	clientId := clCfg.OutlookClient.ClientId
-	tenantId := clCfg.OutlookClient.TenantId
-	uname := clCfg.OutlookClient.Uname
-	paswd := clCfg.OutlookClient.Paswd
+	selectField := r.URL.Query().Get("field")
+	token := clCfg.OutlookClient.Paswd // this config field used to store token in case of the RestClient
+	requestUrl := fmt.Sprintf("https://graph.microsoft.com/v1.0/me?$select=%s", selectField)
 
-	cred, err := azidentity.NewUsernamePasswordCredential(
-		tenantId,
-		clientId,
-		uname,
-		paswd,
-		nil,
-	)
+	req, _ := http.NewRequest("GET", requestUrl, nil)
+	req.Header.Add("Accept", "application/json")
+	req.Header.Add("Authorization", token)
+
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		responseError(w, r, fmt.Sprintf("Error creating credentials: %v", err))
+		responseError(w, r, fmt.Sprintf("Error making request: %v", err))
 		return
 	}
+	defer resp.Body.Close()
 
-	gClient, err := msgraph.NewGraphServiceClientWithCredentials(cred, []string{"Mail.ReadWrite"})
+	respBytes, err := io.ReadAll(resp.Body)
 	if err != nil {
-		responseError(w, r, fmt.Sprintf("Error creating client: %v", err))
-		return
+		responseError(w, r, fmt.Sprintf("Error retrieving response body: %v", err))
 	}
 
-	requestFilter := ""
-
-	requestParams := &msgusers.ItemMessagesRequestBuilderGetQueryParameters{
-		Filter: &requestFilter,
-		Select: []string{"subject", "sender", "receivedDateTime"},
-	}
-
-	requestConfig := &msgusers.ItemMessagesRequestBuilderGetRequestConfiguration{
-		QueryParameters: requestParams,
-	}
-
-	messages, err := gClient.Me().Messages().Get(context.Background(), requestConfig)
+	respBody := make(map[string]interface{})
+	err = json.Unmarshal(respBytes, &respBody)
 	if err != nil {
-		log.Error("Error details", slog.String("errBody", err.Error()))
-		responseError(w, r, fmt.Sprintf("Error getting messages: %v", err))
-		return
+		responseError(w, r, fmt.Sprintf("Error unmarshalling response body: %v", err))
 	}
 
-	responseOk(w, r, strconv.FormatInt(*messages.GetOdataCount(), 10))
+	respField, _ := json.Marshal(map[string]string{
+		selectField: fmt.Sprintf("%v", respBody[selectField]),
+	})
+
+	responseOk(w, r, string(respField))
 }
 
 func responseOk(w http.ResponseWriter, r *http.Request, data string) {
