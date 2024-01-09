@@ -23,7 +23,7 @@ type Response struct {
 
 func New(log *slog.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		const op = "http-server.handlers.outlook.client.New"
+		const op = "http-server.handlers.outlook.msgraphclient.New"
 		clCfg := clientconfig.Load()
 
 		log = log.With(

@@ -3,7 +3,7 @@ package router
 import (
 	"log/slog"
 	"net/http"
-	client "outlook-automator/internal/http-server/handlers/outlook/restclient"
+	client "outlook-automator/internal/http-server/handlers/outlook/soapclient"
 	"outlook-automator/pkg/server/config"
 
 	"github.com/go-chi/chi"
